@@ -1,4 +1,4 @@
-package com.agh;
+package com.agh.lab1;
 
 class Counter {
     private int _val;

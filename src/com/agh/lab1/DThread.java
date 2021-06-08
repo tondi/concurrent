@@ -1,4 +1,4 @@
-package com.agh;
+package com.agh.lab1;
 
 // Watek, ktory dekrementuje licznik 100.000 razy
 class DThread extends Thread {

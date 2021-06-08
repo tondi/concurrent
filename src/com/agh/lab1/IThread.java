@@ -1,4 +1,4 @@
-package com.agh;
+package com.agh.lab1;
 
 // Watek, ktory inkrementuje licznik 100.000 razy
 class IThread extends Thread {

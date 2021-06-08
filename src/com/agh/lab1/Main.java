@@ -1,5 +1,6 @@
-package com.agh;
+package com.agh.lab1;
 
+// mownit
 public class Main {
     public static double x(int n) {
         if(n == 0) return 0.01;
