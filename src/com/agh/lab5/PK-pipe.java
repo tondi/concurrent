@@ -2,30 +2,24 @@ package com.agh.lab5;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 class PKmon {
-    public static long exec(int i) throws InterruptedException {
-        int bufferSize = 5;
-        int iterations = 30;
-        int convertersCount = i;
+    public static long exec() throws InterruptedException {
+        int bufferSize = 8;
 
-        List<Thread> threads = new ArrayList<Thread>();
         long start = System.currentTimeMillis();
 
-        Buffer prev = new Buffer(bufferSize);
-        Buffer next = prev; // start with first
+        List<Thread> threads = new ArrayList<>();
+        Buffer buffer = new Buffer(bufferSize);
 
-        Producer producer = new Producer(next, iterations);
-        threads.add(producer);
-
-        for (int j = 0; j < convertersCount; j++) {
-            prev = next;
-            next = new Buffer(bufferSize);
-            threads.add(new Converter(prev, next, iterations));
+        for (int j = 0; j < 4; j++) {
+            Producer producer = new Producer(buffer, new Random().nextInt(bufferSize));
+            threads.add(producer);
+//
+            Consumer consumer = new Consumer(buffer, new Random().nextInt(bufferSize));
+            threads.add(consumer);
         }
-
-        Consumer consumer = new Consumer(next, iterations);
-        threads.add(consumer);
 
         for (Thread t : threads) {
             t.start();
@@ -44,9 +38,11 @@ class PKmon {
     public static void main(String[] args) throws InterruptedException {
 //        System.out.println(exec(10));
 
-        for(int i = 100; i <= 100; i++) {
-            System.out.println(i + " " + exec(i));
-        }
+//        for(int i = 5; i <= 5; i++) {
+//            System.out.println(i + " " + exec(i));
+//        }
+
+        exec();
     }
 }
 class Buffer {
@@ -58,82 +54,82 @@ class Buffer {
         _buf = new ArrayList(size);
     }
 
-    public synchronized void put(int i) {
-        while (_buf.size() == _size) {
+    public synchronized void put(List<Integer> data) {
+        while (data.size() > _size - _buf.size()) {
             try {
+                System.out.println("proba produkcji  " + data.size() +
+                    ", ilosc wolnych w buforze " + (_size - _buf.size()));
                 wait();
             } catch (InterruptedException e) {
             }
         }
 
-        _buf.add(i);
+        System.out.println("Dodaje " + data.size() + " elementow");
+
+        _buf.addAll(data);
         notify();
     }
 
-    public synchronized int get() {
-        while (_buf.size() == 0) {
+    public synchronized List<Integer> get(int i) {
+        while (i >_buf.size()) {
             try {
+                System.out.println("proba konsumpcji " + i + " zasobow" + ", wolnych: " + _buf.size());
                 wait();
             } catch (InterruptedException e) {
             }
         }
 
-        Integer value = _buf.remove(0);
+        List<Integer> newList = new ArrayList<>(i);
+
+        for (int j = 0 ; j < i; j++) {
+            newList.add(_buf.remove(0));
+        }
+
+        System.out.print("Zwracam " + i + " wartosci: ");
+        for (int j = 0; j < i; j++) {
+            System.out.print(newList.get(j) + " ");
+        }
+        System.out.println();
+
         notify();
-        return value;
+        return newList;
     }
 }
 class Consumer extends Thread {
     private Buffer _buf;
-    private int iter;
+    private int _i;
 
-    public Consumer(Buffer buffer, int iterations) {
+    public Consumer(Buffer buffer, int i) {
         this._buf = buffer;
-        this.iter = iterations;
+        this._i = i;
     }
 
     public void run() {
-        for (int i = 0; i < iter; i++) {
-            _buf.get();
-        }
-    }
-}
-class Converter extends Thread {
-    private Buffer previous;
-    private Buffer next;
-    private int iter;
-
-    public Converter(Buffer previous, Buffer next, int iterations) {
-        this.previous = previous;
-        this.next = next;
-        this.iter = iterations;
-    }
-
-    public void run() {
-        for (int i = 0; i < this.iter; i++) {
-            int tmp = previous.get();
-            tmp += 10;
-            try {
-                sleep(10);
-            } catch (InterruptedException e) {
-                System.out.println(e.getMessage());
-            }
-            next.put(tmp);
-        }
+        try {
+            Thread.sleep((new Random()).nextInt(500));
+        } catch(InterruptedException e) {}
+        _buf.get(_i);
     }
 }
 class Producer extends Thread {
     private Buffer _buf;
-    private int iter;
+    private int _i;
 
-    public Producer(Buffer buffer, int iterations) {
+    public Producer(Buffer buffer, int i) {
         this._buf = buffer;
-        this.iter = iterations;
+        this._i = i;
     }
 
     public void run() {
-        for (int i = 0; i < iter; i++) {
-            _buf.put(i);
+        try {
+            Thread.sleep((new Random()).nextInt(500));
+        } catch(InterruptedException e) {}
+
+        List<Integer> data = new ArrayList<>(_i);
+        for (int j = 0; j < _i; j++) {
+            data.add(j);
         }
+
+        _buf.put(data);
     }
 }
